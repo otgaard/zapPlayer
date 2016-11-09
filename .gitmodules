@@ -1,0 +1,6 @@
+[submodule "third_party/zap"]
+	path = third_party/zap
+	url = https://github.com/otgaard/zap
+[submodule "third_party/simple_mp3"]
+	path = third_party/simple_mp3
+	url = https://github.com/otgaard/simple_mp3
