@@ -18,11 +18,13 @@ find_package(Qt5Widgets REQUIRED)
 find_package(Qt5Gui REQUIRED)
 find_package(Qt5OpenGL REQUIRED)
 
-qt5_wrap_cpp(ZAP_PLAYER_MOC zapPlayer.h)
+qt5_wrap_cpp(ZAP_PLAYER_MOC
+        QZapWidget.h
+        zapPlayer.h)
 
 qt5_wrap_ui(ZAP_PLAYER_UI zapPlayer.ui)
 
-set(ZAP_PLAYER_FILES main.cpp zapPlayer.cpp)
+set(ZAP_PLAYER_FILES main.cpp zapPlayer.cpp QZapWidget.cpp)
 
 add_executable(zapPlayer ${ZAP_PLAYER_FILES} ${ZAP_PLAYER_MOC} ${ZAP_PLAYER_UI})
 

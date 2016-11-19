@@ -5,6 +5,7 @@
 #-------------------------------------------------
 
 QT       += core gui
+CONFIG += c++14
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -13,8 +14,10 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        zapPlayer.cpp
+        zapPlayer.cpp \
+    QZapWidget.cpp
 
-HEADERS  += zapPlayer.h
+HEADERS  += zapPlayer.h \
+    QZapWidget.h
 
 FORMS    += zapPlayer.ui
