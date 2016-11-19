@@ -1,3 +1,6 @@
 [submodule "third_party/zap"]
 	path = third_party/zap
 	url = https://github.com/otgaard/zap
+[submodule "third_party/zapAudio"]
+	path = third_party/zapAudio
+	url = https://github.com/otgaard/zapAudio
