@@ -24,6 +24,7 @@ public slots:
 private:
     Ui::zapPlayer* ui;
     audio_output_s16 output_;
+    QString filename_;
 };
 
 #endif // ZAPPLAYER_H

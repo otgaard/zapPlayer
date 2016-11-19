@@ -8,6 +8,8 @@ zapPlayer::zapPlayer(QWidget *parent) : QDialog(parent), ui(new Ui::zapPlayer), 
     ui->setupUi(this);
 
     connect(ui->btnOpenFile, &QPushButton::clicked, this, &zapPlayer::openFile);
+    connect(ui->btnPlay, &QPushButton::clicked, this, &zapPlayer::play);
+    connect(ui->btnStop, &QPushButton::clicked, this, &zapPlayer::stop);
 }
 
 zapPlayer::~zapPlayer() {
@@ -16,26 +18,29 @@ zapPlayer::~zapPlayer() {
 }
 
 void zapPlayer::openFile() {
-    auto filename = QFileDialog::getOpenFileName(this, tr("Open MP3 File"), QDir::homePath(),
+    filename_ = QFileDialog::getOpenFileName(this, tr("Open MP3 File"), QDir::homePath(),
         tr("MP3 Files (*.mp3)"));
-    if(!filename.isEmpty()) {
-        auto stream_ptr = new mp3_stream(filename.toStdString(), 1024, nullptr);
-        if(!stream_ptr->start()) {
-            qDebug() << "Error starting mp3_stream";
-            return;
-        }
-
-        output_.set_stream(stream_ptr);
-        output_.play();
-    }
 }
 
 void zapPlayer::play() {
+    if(output_.get_stream()) {
+        // Shut down and clean up the old stream
+        delete output_.get_stream();
+    }
 
+    auto stream_ptr = new mp3_stream(filename_.toStdString(), 1024, nullptr);
+    if(!stream_ptr->start()) {
+        qDebug() << "Error starting mp3_stream";
+        return;
+    }
+
+    output_.set_stream(stream_ptr);
+
+    output_.play();
 }
 
 void zapPlayer::stop() {
-
+    output_.stop();
 }
 
 void zapPlayer::pause() {
