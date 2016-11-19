@@ -2,21 +2,28 @@
 #define ZAPPLAYER_H
 
 #include <QDialog>
+#include <zapAudio/base/audio_output.hpp>
 
 namespace Ui {
 class zapPlayer;
 }
 
-class zapPlayer : public QDialog
-{
+class zapPlayer : public QDialog {
     Q_OBJECT
 
 public:
-    explicit zapPlayer(QWidget *parent = 0);
+    explicit zapPlayer(QWidget* parent=nullptr);
     ~zapPlayer();
 
+public slots:
+    void openFile();
+    void play();
+    void stop();
+    void pause();
+
 private:
-    Ui::zapPlayer *ui;
+    Ui::zapPlayer* ui;
+    audio_output_s16 output_;
 };
 
 #endif // ZAPPLAYER_H
