@@ -46,6 +46,7 @@ protected:
     std::mutex bin_buffer_mtx_;
     fft_buffer_t prev_;
     fft_buffer_t curr_;
+    fft_buffer_t smoothing_;
 
     void fourier_transform(fft_buffer_t& fft_buffer, int window, bool inverse);
 

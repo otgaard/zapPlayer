@@ -13,9 +13,13 @@
 
 constexpr float s16_inv = 1.f/std::numeric_limits<short>::max();
 
+// Triangular smoothing function
+constexpr static float tri_smooth[5] = { 1.f, 2.f, 3.f, 2.f, 1.f };
+constexpr static float inv_tri = 1.f/9.f; // or 1/5 for box smoothing && { 1, 1, 1, 1, 1 };
+
 analyser_stream::analyser_stream(audio_stream<sample_t>* parent, size_t frame_size, size_t bins)
         : audio_stream<sample_t>(parent), frame_size_(frame_size), bins_(bins), transform_buffer_(frame_size_*2),
-          bin_buffer_(bins_), prev_(frame_size_*2, 0.f), curr_(frame_size*2, 0.f) {
+          bin_buffer_(bins_), prev_(frame_size_*2, 0.f), curr_(frame_size*2, 0.f), smoothing_(5*bins_, 0.f) {
 }
 
 size_t analyser_stream::read(buffer_t& buffer, size_t len) {
@@ -26,16 +30,6 @@ size_t analyser_stream::read(buffer_t& buffer, size_t len) {
         LOG("Error, frame_size mismatch");
         return ret;
     }
-
-    /*
-    for(int i = 0; i != frame_size_; ++i) {
-        auto idx = 2*i;
-        transform_buffer_[idx] = buffer[idx] * s16_inv;
-        transform_buffer_[idx+1] = 0.f;
-    }
-
-    fourier_transform(transform_buffer_, frame_size_, false);
-    */
 
     process_samples(buffer);
 
@@ -48,6 +42,10 @@ size_t analyser_stream::read(buffer_t& buffer, size_t len) {
             float mag = 20.f * std::log10(2.f * inv_transform_size
                                               * std::sqrt(transform_buffer_[idx] * transform_buffer_[idx]
                                                           + transform_buffer_[idx+1] * transform_buffer_[idx+1]));
+            for(int k = 4; k != 0; --k) smoothing_[5*i+k] = smoothing_[5*i+(k-1)];
+            smoothing_[5*i] = mag; mag = 0;
+            for(int k = 0; k != 5; ++k) mag += tri_smooth[k]*smoothing_[5*i+k];
+            mag *= inv_tri;
             bin_buffer_[i] = (zap::maths::clamp(mag, -100.f, 0.f) + 100.f)*0.01f;
         }
     }
