@@ -15,17 +15,22 @@ const char* const vtx_shdr = GLSL(
     in vec2 position;
 
     uniform mat4 pvm_matrix;
+    uniform float height;
+
+    out float value;
 
     void main() {
-        gl_Position = pvm_matrix * vec4(position, 0, 1);
+        value = position.y;
+        gl_Position = pvm_matrix * vec4(position.x, position.y * height, 0, 1);
     }
 );
 
 const char* const frg_shdr = GLSL(
     uniform vec4 colour = vec4(1,1,1,1);
+    in float value;
     out vec4 frag_colour;
     void main() {
-        frag_colour = colour;
+        frag_colour = vec4(1.0 - value, value, 0, 1);
     }
 );
 
@@ -37,7 +42,7 @@ using namespace zap::renderer;
 using pos2_t = core::position<vec2f>;
 using vertex_t = vertex<pos2_t>;
 using vbuf_t = vertex_buffer<vertex_t, buffer_usage::BU_STATIC_DRAW>;
-using mesh_t = mesh<vertex_stream<vbuf_t>, primitive_type::PT_LINE_STRIP>;
+using mesh_t = mesh<vertex_stream<vbuf_t>, primitive_type::PT_TRIANGLES>;
 
 struct visualiser::state_t {
     vbuf_t vbuf;
@@ -79,7 +84,7 @@ bool visualiser::initialise() {
 
     s.mesh.set_stream(&s.vbuf);
     s.mesh.bind(); s.vbuf.bind();
-    s.vbuf.initialise(128);
+    s.vbuf.initialise(6 * 128); // 6 vertices per quad
     s.mesh.release();
 
     return true;
@@ -93,17 +98,10 @@ void visualiser::resize(int width, int height) {
 
         s.prog.bind();
         s.prog.bind_uniform("pvm_matrix", s.cam.proj_view());
+        s.prog.bind_uniform("height", float(height));
         s.prog.release();
 
-        s.vbuf.bind();
-        if(s.vbuf.map(buffer_access::BA_WRITE_ONLY)) {
-            float inc = s.width/127.f;
-            for(int i = 0; i != 128; ++i) {
-                s.vbuf[i].position.set(i*inc, s.bins[i]);
-            }
-            s.vbuf.unmap();
-        }
-        s.vbuf.release();
+        update(0,0);
     }
 }
 
@@ -112,7 +110,15 @@ void visualiser::update(double t, float dt) {
     if(s.vbuf.map(buffer_access::BA_WRITE_ONLY)) {
         float inc = s.width/127.f;
         for(int i = 0; i != 128; ++i) {
-            s.vbuf[i].position.set(i*inc, s.height*s.bins[i]+10);
+            auto idx = 6*i;
+            auto A = i*inc;
+            auto B = A+inc;
+            s.vbuf[idx+0].position.set(A, 0.f);
+            s.vbuf[idx+1].position.set(B, 0.f);
+            s.vbuf[idx+2].position.set(B, s.bins[i]);
+            s.vbuf[idx+3].position.set(A, 0.f);
+            s.vbuf[idx+4].position.set(B, s.bins[i]);
+            s.vbuf[idx+5].position.set(A, s.bins[i]);
         }
         s.vbuf.unmap();
     }

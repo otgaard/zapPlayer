@@ -22,8 +22,11 @@ public:
 public slots:
     void openFile();
     void play();
+    void sineWave();
     void stop();
     void pause();
+
+    void changeHertz(int hertz);
 
     void sync();
 
