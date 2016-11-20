@@ -6,11 +6,17 @@
  */
 
 #include <memory>
+#include <vector>
 
 class visualiser {
 public:
     visualiser();
     ~visualiser();
+
+    bool initialise();
+    bool is_initialised() const;
+
+    void set_frequency_bins(const std::vector<float>& bins);
 
     void resize(int width, int height);
 

@@ -3,11 +3,15 @@
 
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
+#include "visualiser.hpp"
 
 class QZapWidget : public QOpenGLWidget, protected QOpenGLFunctions {
 public:
     QZapWidget(QWidget* parent=nullptr);
     virtual ~QZapWidget();
+
+    visualiser* get_visualiser() const;
+    void set_visualiser(visualiser* vis_ptr);
 
     void initializeGL() override;
     void paintGL() override;
@@ -19,7 +23,8 @@ public:
 protected:
 
 private:
-
+    bool context_initialised_;
+    visualiser* vis_ptr_;
 };
 
 #endif // QZAPWIDGET_H
