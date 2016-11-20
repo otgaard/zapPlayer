@@ -32,7 +32,7 @@ zapPlayer::~zapPlayer() {
 }
 
 void zapPlayer::changeHertz(int hertz) {
-    if(auto ptr = static_cast<sine_wave<short>*>(streams_[0])) {
+    if(auto ptr = dynamic_cast<sine_wave<short>*>(streams_[0])) {
         if(ui->spinHertz->value() != hertz) ui->spinHertz->setValue(hertz);
         if(ui->dialHertz->value() != hertz) ui->dialHertz->setValue(hertz);
         ptr->set_hertz(hertz);
