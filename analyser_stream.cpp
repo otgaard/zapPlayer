@@ -19,7 +19,8 @@ constexpr static float inv_tri = 1.f/9.f; // or 1/5 for box smoothing && { 1, 1,
 
 analyser_stream::analyser_stream(audio_stream<sample_t>* parent, size_t frame_size, size_t bins)
         : audio_stream<sample_t>(parent), frame_size_(frame_size), bins_(bins), transform_buffer_(frame_size_*2),
-          bin_buffer_(bins_), prev_(frame_size_*2, 0.f), curr_(frame_size*2, 0.f), smoothing_(5*bins_, 0.f) {
+          prev_bin_buffer_(bins_), curr_bin_buffer_(bins_), prev_(frame_size_*2, 0.f), curr_(frame_size*2, 0.f),
+          smoothing_(5*bins_, 0.f) {
 }
 
 size_t analyser_stream::read(buffer_t& buffer, size_t len) {
@@ -33,21 +34,24 @@ size_t analyser_stream::read(buffer_t& buffer, size_t len) {
 
     process_samples(buffer);
 
-    const float inv_transform_size = 1.f/transform_buffer_.size();
+    const float inv_transform_size = 2.f/transform_buffer_.size();
 
     {
         std::unique_lock<std::mutex> lock(bin_buffer_mtx_);
-        for(int i = 0; i != bins_; ++i) {
-            const auto idx = 2*i;
-            float mag = 20.f * std::log10(2.f * inv_transform_size
-                                              * std::sqrt(transform_buffer_[idx] * transform_buffer_[idx]
-                                                          + transform_buffer_[idx+1] * transform_buffer_[idx+1]));
-            for(int k = 4; k != 0; --k) smoothing_[5*i+k] = smoothing_[5*i+(k-1)];
-            smoothing_[5*i] = mag; mag = 0;
-            for(int k = 0; k != 5; ++k) mag += tri_smooth[k]*smoothing_[5*i+k];
-            mag *= inv_tri;
-            bin_buffer_[i] = (zap::maths::clamp(mag, -100.f, 0.f) + 100.f)*0.01f;
-        }
+        prev_bin_buffer_ = curr_bin_buffer_;
+    }
+
+
+    for(int i = 0; i != bins_; ++i) {
+        const auto idx = 2*i;
+        float mag = 20.f * std::log10(inv_transform_size
+                                      * std::sqrt(transform_buffer_[idx] * transform_buffer_[idx]
+                                                  + transform_buffer_[idx+1] * transform_buffer_[idx+1]));
+        for(int k = 4; k != 0; --k) smoothing_[5*i+k] = smoothing_[5*i+(k-1)];
+        smoothing_[5*i] = mag; mag = 0;
+        for(int k = 0; k != 5; ++k) mag += tri_smooth[k]*smoothing_[5*i+k];
+        mag *= inv_tri;
+        curr_bin_buffer_[i] = (zap::maths::clamp(mag, -100.f, 0.f) + 100.f)*0.01f;
     }
 
     return ret;

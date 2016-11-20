@@ -28,7 +28,7 @@ public:
         std::unique_lock<std::mutex> lock(bin_buffer_mtx_);
         size_t size = std::min(bins_, bins);
         if(output.size() != bins) output.resize(bins);
-        std::copy(bin_buffer_.begin(), bin_buffer_.begin()+size, output.begin());
+        std::copy(prev_bin_buffer_.begin(), prev_bin_buffer_.begin()+size, output.begin());
         return size;
     }
 
@@ -42,7 +42,8 @@ protected:
     size_t frame_size_;
     size_t bins_;
     fft_buffer_t transform_buffer_;
-    fft_buffer_t bin_buffer_;
+    fft_buffer_t prev_bin_buffer_;
+    fft_buffer_t curr_bin_buffer_;
     std::mutex bin_buffer_mtx_;
     fft_buffer_t prev_;
     fft_buffer_t curr_;
