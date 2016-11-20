@@ -33,6 +33,7 @@ public:
     }
 
 protected:
+    void process_samples(const  buffer_t& samples);
 
     inline float hamming_window(size_t n, size_t N) {
         return 0.54f - 0.46f * std::sin(2.0f * (float)zap::maths::TWO_PI * n)/(N - 1);
@@ -43,6 +44,8 @@ protected:
     fft_buffer_t transform_buffer_;
     fft_buffer_t bin_buffer_;
     std::mutex bin_buffer_mtx_;
+    fft_buffer_t prev_;
+    fft_buffer_t curr_;
 
     void fourier_transform(fft_buffer_t& fft_buffer, int window, bool inverse);
 

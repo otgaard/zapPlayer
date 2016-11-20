@@ -15,7 +15,7 @@ constexpr float s16_inv = 1.f/std::numeric_limits<short>::max();
 
 analyser_stream::analyser_stream(audio_stream<sample_t>* parent, size_t frame_size, size_t bins)
         : audio_stream<sample_t>(parent), frame_size_(frame_size), bins_(bins), transform_buffer_(frame_size_*2),
-          bin_buffer_(bins_) {
+          bin_buffer_(bins_), prev_(frame_size_*2, 0.f), curr_(frame_size*2, 0.f) {
 }
 
 size_t analyser_stream::read(buffer_t& buffer, size_t len) {
@@ -27,6 +27,7 @@ size_t analyser_stream::read(buffer_t& buffer, size_t len) {
         return ret;
     }
 
+    /*
     for(int i = 0; i != frame_size_; ++i) {
         auto idx = 2*i;
         transform_buffer_[idx] = buffer[idx] * s16_inv;
@@ -34,6 +35,9 @@ size_t analyser_stream::read(buffer_t& buffer, size_t len) {
     }
 
     fourier_transform(transform_buffer_, frame_size_, false);
+    */
+
+    process_samples(buffer);
 
     const float inv_transform_size = 1.f/transform_buffer_.size();
 
@@ -53,6 +57,28 @@ size_t analyser_stream::read(buffer_t& buffer, size_t len) {
 
 size_t analyser_stream::write(const buffer_t& buffer, size_t len) {
     return 0;
+}
+
+void analyser_stream::process_samples(const buffer_t& samples) {
+    const size_t sample_count = frame_size_*2;
+    const size_t fft_window = 2 * sample_count;
+    if(transform_buffer_.size() < fft_window) transform_buffer_.resize(fft_window);
+
+    for(size_t i = 0; i < sample_count; ++i) {
+        const auto idx = 2*i;
+        if(i < frame_size_) {
+            transform_buffer_[idx]     = prev_[idx] * hamming_window(i, sample_count);
+            transform_buffer_[idx + 1] = 0;
+        } else {
+            const auto offset = idx - sample_count;
+            transform_buffer_[idx]     = s16_inv*samples[offset] * hamming_window(i, sample_count);
+            transform_buffer_[idx + 1] = 0;
+            curr_[offset] = s16_inv*samples[offset];
+        }
+    }
+
+    fourier_transform(transform_buffer_, sample_count, false);
+    prev_ = curr_;
 }
 
 void analyser_stream::fourier_transform(fft_buffer_t& fft_buffer, int window, bool inverse) {
