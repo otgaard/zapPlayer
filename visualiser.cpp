@@ -54,10 +54,10 @@ struct visualiser::state_t {
 
     int width, height;
 
-    state_t() : cam(false), bins(128, 0.f) { }
+    state_t(size_t bins) : cam(false), bins(bins, 0.f) { }
 };
 
-visualiser::visualiser() : state_(new state_t()), s(*state_.get()) {
+visualiser::visualiser(size_t bins) : state_(new state_t(bins)), s(*state_.get()) {
 }
 
 visualiser::~visualiser() = default;
@@ -84,7 +84,7 @@ bool visualiser::initialise() {
 
     s.mesh.set_stream(&s.vbuf);
     s.mesh.bind(); s.vbuf.bind();
-    s.vbuf.initialise(6 * 128); // 6 vertices per quad
+    s.vbuf.initialise(6 * s.bins.size()); // 6 vertices per quad
     s.mesh.release();
 
     return true;
@@ -108,8 +108,8 @@ void visualiser::resize(int width, int height) {
 void visualiser::update(double t, float dt) {
     s.vbuf.bind();
     if(s.vbuf.map(buffer_access::BA_WRITE_ONLY)) {
-        float inc = s.width/127.f;
-        for(int i = 0; i != 128; ++i) {
+        float inc = s.width/float(s.bins.size()-1);
+        for(int i = 0; i != s.bins.size(); ++i) {
             auto idx = 6*i;
             auto A = i*inc;
             auto B = A+inc;

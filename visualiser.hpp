@@ -10,7 +10,7 @@
 
 class visualiser {
 public:
-    visualiser();
+    visualiser(size_t bins);
     ~visualiser();
 
     bool initialise();
