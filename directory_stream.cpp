@@ -33,6 +33,12 @@ bool directory_stream::start() {
 size_t directory_stream::read(buffer_t& buffer, size_t len) {
     if(file_streams_[0]) {
         auto ret = file_streams_[0]->read(buffer, len);
+
+        if(skip_track_) {
+            ret = 0;
+            skip_track_ = false;
+        }
+
         if(ret < len) {
             // This stream is exhausted.  Continue on the next
             file_streams_[0].swap(file_streams_[1]);

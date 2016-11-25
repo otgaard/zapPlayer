@@ -25,6 +25,7 @@ public slots:
     void sineWave();
     void stop();
     void pause();
+    void skip_track();
 
     void changeHertz(int hertz);
 

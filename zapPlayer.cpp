@@ -17,6 +17,7 @@ zapPlayer::zapPlayer(QWidget *parent) : QDialog(parent), ui(new Ui::zapPlayer), 
     connect(ui->btnOpenFile, &QPushButton::clicked, this, &zapPlayer::openFile);
     connect(ui->btnPlay, &QPushButton::clicked, this, &zapPlayer::play);
     connect(ui->btnStop, &QPushButton::clicked, this, &zapPlayer::stop);
+    connect(ui->btnSkip, &QPushButton::clicked, this, &zapPlayer::skip_track);
     connect(ui->btnSineWave, &QPushButton::clicked, this, &zapPlayer::sineWave);
     connect(ui->spinHertz, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged), this, &zapPlayer::changeHertz);
     connect(ui->dialHertz, static_cast<void(QDial::*)(int)>(&QDial::valueChanged), this, &zapPlayer::changeHertz);
@@ -138,6 +139,12 @@ void zapPlayer::stop() {
 
 void zapPlayer::pause() {
 
+}
+
+void zapPlayer::skip_track() {
+    if(auto ptr = dynamic_cast<directory_stream*>(streams_[0])) {
+        ptr->skip_track();
+    }
 }
 
 void zapPlayer::sync() {

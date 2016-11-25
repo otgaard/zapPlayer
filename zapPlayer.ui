@@ -14,7 +14,7 @@
    <string>zapPlayer</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0" colspan="8">
+   <item row="0" column="0" colspan="9">
     <widget class="QZapWidget" name="openGLWidget"/>
    </item>
    <item row="1" column="0">
@@ -51,7 +51,7 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="4">
+   <item row="1" column="5">
     <spacer name="horizontalSpacer_2">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -64,14 +64,14 @@
      </property>
     </spacer>
    </item>
-   <item row="1" column="5">
+   <item row="1" column="6">
     <widget class="QPushButton" name="btnSineWave">
      <property name="text">
       <string>Sine Wave</string>
      </property>
     </widget>
    </item>
-   <item row="1" column="6">
+   <item row="1" column="7">
     <widget class="QSpinBox" name="spinHertz">
      <property name="minimum">
       <number>1</number>
@@ -87,7 +87,7 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="7">
+   <item row="1" column="8">
     <widget class="QDial" name="dialHertz">
      <property name="minimum">
       <number>1</number>
@@ -97,6 +97,13 @@
      </property>
      <property name="value">
       <number>440</number>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="4">
+    <widget class="QPushButton" name="btnSkip">
+     <property name="text">
+      <string>Skip Track</string>
      </property>
     </widget>
    </item>

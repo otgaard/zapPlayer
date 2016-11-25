@@ -5,11 +5,12 @@
 #include <array>
 #include <queue>
 #include <string>
+#include <atomic>
 #include "zapAudio/base/mp3_stream.hpp"
 
 class directory_stream : public audio_stream<short> {
 public:
-    directory_stream(const std::string& path, size_t frame_size) : path_(path), frame_size_(frame_size) { }
+    directory_stream(const std::string& path, size_t frame_size) : path_(path), frame_size_(frame_size), skip_track_(false) { }
     virtual ~directory_stream() { }
 
     bool start();
@@ -17,11 +18,14 @@ public:
     virtual size_t read(buffer_t& buffer, size_t len);
     virtual size_t write(const buffer_t& buffer, size_t len);
 
+    void skip_track() { skip_track_ = true; }
+
 private:
     std::string path_;
     size_t frame_size_;
     std::queue<std::string> file_queue_;
     std::array<std::unique_ptr<mp3_stream>, 2> file_streams_;
+    std::atomic<bool> skip_track_;
 };
 
 #endif //ZAPPLAYER_DIRECTORY_STREAM_HPP
