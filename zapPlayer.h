@@ -21,23 +21,27 @@ public:
 
 public slots:
     void openFile();
+    void openFolder();
+
     void play();
-    void sineWave();
     void stop();
     void pause();
     void skip_track();
-
-    void changeHertz(int hertz);
 
     void sync();
 
 private:
     Ui::zapPlayer* ui;
-    audio_output_s16 output_;
-    QString filename_;
+
+    audio_output_s16 audio_out_;
+
+    QString path_;
+    bool is_folder_;    // Is the path a folder or a file
+
     audio_stream<short>* streams_[3];
-    QTimer sync_;
     visualiser visualiser_;
+
+    QTimer sync_;
 };
 
 #endif // ZAPPLAYER_H

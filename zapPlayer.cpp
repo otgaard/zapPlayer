@@ -10,7 +10,7 @@
 #include <zapAudio/base/sine_wave.hpp>
 #include <zapAudio/base/buffered_stream.hpp>
 
-zapPlayer::zapPlayer(QWidget *parent) : QDialog(parent), ui(new Ui::zapPlayer), output_(nullptr,2,44100,1024),
+zapPlayer::zapPlayer(QWidget *parent) : QDialog(parent), ui(new Ui::zapPlayer), audio_out_(nullptr,2,44100,1024),
     visualiser_(128) {
     ui->setupUi(this);
 
@@ -18,9 +18,6 @@ zapPlayer::zapPlayer(QWidget *parent) : QDialog(parent), ui(new Ui::zapPlayer), 
     connect(ui->btnPlay, &QPushButton::clicked, this, &zapPlayer::play);
     connect(ui->btnStop, &QPushButton::clicked, this, &zapPlayer::stop);
     connect(ui->btnSkip, &QPushButton::clicked, this, &zapPlayer::skip_track);
-    connect(ui->btnSineWave, &QPushButton::clicked, this, &zapPlayer::sineWave);
-    connect(ui->spinHertz, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged), this, &zapPlayer::changeHertz);
-    connect(ui->dialHertz, static_cast<void(QDial::*)(int)>(&QDial::valueChanged), this, &zapPlayer::changeHertz);
 
     // We want to implement a pulse that feeds the FFT bins to the visualiser
     connect(&sync_, &QTimer::timeout, this, &zapPlayer::sync);
@@ -30,16 +27,8 @@ zapPlayer::zapPlayer(QWidget *parent) : QDialog(parent), ui(new Ui::zapPlayer), 
 }
 
 zapPlayer::~zapPlayer() {
-    output_.stop();
+    audio_out_.stop();
     delete ui;
-}
-
-void zapPlayer::changeHertz(int hertz) {
-    if(auto ptr = dynamic_cast<sine_wave<short>*>(streams_[0])) {
-        if(ui->spinHertz->value() != hertz) ui->spinHertz->setValue(hertz);
-        if(ui->dialHertz->value() != hertz) ui->dialHertz->setValue(hertz);
-        ptr->set_hertz(hertz);
-    }
 }
 
 void zapPlayer::showEvent(QShowEvent* event) {
@@ -56,9 +45,9 @@ void zapPlayer::openFile() {
 }
 
 void zapPlayer::play() {
-    if(output_.is_playing() || output_.is_paused()) output_.stop();
+    if(audio_out_.is_playing() || audio_out_.is_paused()) audio_out_.stop();
 
-    if(output_.get_stream()) {
+    if(audio_out_.get_stream()) {
         // Shut down and clean up the old stream
         delete streams_[0];
         delete streams_[1];
@@ -94,47 +83,15 @@ void zapPlayer::play() {
     streams_[1] = buffer_ptr;
     streams_[2] = fft_ptr;
 
-    output_.set_stream(fft_ptr);
+    audio_out_.set_stream(fft_ptr);
 
-    output_.play();
-    sync_.start(1.f/60*1000);
-}
-
-void zapPlayer::sineWave() {
-    if(output_.is_playing() || output_.is_paused()) output_.stop();
-
-    if(output_.get_stream()) {
-        // Shut down and clean up the old stream
-        delete streams_[0];
-        delete streams_[1];
-        delete streams_[2];
-    }
-
-    auto stream_ptr = new sine_wave<short>(ui->spinHertz->value());
-
-    // This is a buffering stream to prevent I/O blocking interfering with audio output
-    auto buffer_ptr = new buffered_stream<short>(64*1024, 32*1024, 60, stream_ptr);
-    if(!buffer_ptr->start()) {
-        qDebug() << "Error starting buffering stream";
-        return;
-    }
-
-    // This is the FFT stream that produces the FFT transform just before sending the data to audio_output
-    auto fft_ptr = new analyser_stream(buffer_ptr);
-
-    streams_[0] = stream_ptr;
-    streams_[1] = buffer_ptr;
-    streams_[2] = fft_ptr;
-
-    output_.set_stream(fft_ptr);
-
-    output_.play();
+    audio_out_.play();
     sync_.start(1.f/60*1000);
 }
 
 void zapPlayer::stop() {
     sync_.stop();
-    output_.stop();
+    audio_out_.stop();
 }
 
 void zapPlayer::pause() {
