@@ -27,6 +27,7 @@ void QZapWidget::set_visualiser(visualiser* vis_ptr) {
 void QZapWidget::paintGL() {
     glClearColor(.25f, .25f, .25f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
+    glLineWidth(.5f);
     vis_ptr_->draw();
 }
 
