@@ -27,7 +27,7 @@ qt5_wrap_cpp(ZAP_PLAYER_MOC
 
 qt5_wrap_ui(ZAP_PLAYER_UI zapPlayer.ui)
 
-set(ZAP_PLAYER_FILES main.cpp zapPlayer.cpp QZapWidget.cpp visualiser.cpp visualiser.hpp analyser_stream.cpp analyser_stream.hpp directory_stream.cpp directory_stream.hpp)
+set(ZAP_PLAYER_FILES main.cpp zapPlayer.cpp QZapWidget.cpp visualiser.cpp visualiser.hpp analyser_stream.cpp analyser_stream.hpp directory_stream.cpp directory_stream.hpp controller_stream.hpp module/module.hpp analyser.cpp analyser.hpp module/histogram.cpp module/histogram.hpp)
 
 add_executable(zapPlayer ${ZAP_PLAYER_FILES} ${ZAP_PLAYER_MOC} ${ZAP_PLAYER_UI})
 target_include_directories(zapPlayer PUBLIC ${zap_INCLUDE_DIRS} ${zapAudio_INCLUDE_DIRS})

@@ -30,6 +30,8 @@ public slots:
 
     void sync();
 
+    void volumeChanged(int volume);
+
 private:
     Ui::zapPlayer* ui;
 
@@ -38,7 +40,7 @@ private:
     QString path_;
     bool is_folder_;    // Is the path a folder or a file
 
-    audio_stream<short>* streams_[3];
+    audio_stream<short>* streams_[4];
     visualiser visualiser_;
 
     QTimer sync_;

@@ -6,6 +6,7 @@
 #include "ui_zapPlayer.h"
 #include "analyser_stream.hpp"
 #include "directory_stream.hpp"
+#include "controller_stream.hpp"
 #include <zapAudio/base/mp3_stream.hpp>
 #include <zapAudio/base/sine_wave.hpp>
 #include <zapAudio/base/buffered_stream.hpp>
@@ -14,10 +15,15 @@ zapPlayer::zapPlayer(QWidget *parent) : QDialog(parent), ui(new Ui::zapPlayer), 
     visualiser_(128) {
     ui->setupUi(this);
 
+    setWindowFlags(Qt::WindowStaysOnTopHint);
+    //setWindowOpacity(0.5f);
+
     connect(ui->btnOpenFile, &QPushButton::clicked, this, &zapPlayer::openFile);
+    connect(ui->btnOpenFolder, &QPushButton::clicked, this, &zapPlayer::openFolder);
     connect(ui->btnPlay, &QPushButton::clicked, this, &zapPlayer::play);
     connect(ui->btnStop, &QPushButton::clicked, this, &zapPlayer::stop);
     connect(ui->btnSkip, &QPushButton::clicked, this, &zapPlayer::skip_track);
+    connect(ui->sldVolume, &QSlider::valueChanged, this, &zapPlayer::volumeChanged);
 
     // We want to implement a pulse that feeds the FFT bins to the visualiser
     connect(&sync_, &QTimer::timeout, this, &zapPlayer::sync);
@@ -32,16 +38,18 @@ zapPlayer::~zapPlayer() {
 }
 
 void zapPlayer::showEvent(QShowEvent* event) {
-    qDebug() << "showEvent";
     QDialog::showEvent(event);
 }
 
 void zapPlayer::openFile() {
-    /*
-    filename_ = QFileDialog::getOpenFileName(this, tr("Open MP3 File"), QDir::homePath(),
+    path_ = QFileDialog::getOpenFileName(this, tr("Open MP3 File"), QDir::homePath(),
         tr("MP3 Files (*.mp3)"));
-    */
-    filename_ = QFileDialog::getExistingDirectory(nullptr, "Please select a directory to play", QDir::homePath());
+    is_folder_ = false;
+}
+
+void zapPlayer::openFolder() {
+    path_ = QFileDialog::getExistingDirectory(nullptr, "Please select a directory to play", QDir::homePath());
+    is_folder_ = true;
 }
 
 void zapPlayer::play() {
@@ -54,23 +62,26 @@ void zapPlayer::play() {
         delete streams_[2];
     }
 
-    auto pathstream_ptr = new directory_stream(filename_.toStdString(), 1024);
-    if(!pathstream_ptr->start()) {
-        qDebug() << "Error starting directory_stream";
-        return;
-    }
+    audio_stream<short>* sourcestream_ptr;
 
-    /*
-    // This is the file I/O stream that converts the file into samples
-    auto stream_ptr = new mp3_stream(filename_.toStdString(), 1024, nullptr);
-    if(!stream_ptr->start()) {
-        qDebug() << "Error starting mp3_stream";
-        return;
+    if(is_folder_) {
+        auto pathstream_ptr = new directory_stream(path_.toStdString(), 1024);
+        if(!pathstream_ptr->start()) {
+            qDebug() << "Error starting directory_stream";
+            return;
+        }
+        sourcestream_ptr = pathstream_ptr;
+    } else {
+        auto filestream_ptr = new mp3_stream(path_.toStdString(), 1024, nullptr);
+        if(!filestream_ptr->start()) {
+            qDebug() << "Error starting mp3_stream";
+            return;
+        }
+        sourcestream_ptr = filestream_ptr;
     }
-    */
 
     // This is a buffering stream to prevent I/O blocking interfering with audio output
-    auto buffer_ptr = new buffered_stream<short>(64*1024, 32*1024, 60, pathstream_ptr);
+    auto buffer_ptr = new buffered_stream<short>(128*1024, 64*1024, 60, sourcestream_ptr);
     if(!buffer_ptr->start()) {
         qDebug() << "Error starting buffering stream";
         return;
@@ -79,14 +90,18 @@ void zapPlayer::play() {
     // This is the FFT stream that produces the FFT transform just before sending the data to audio_output
     auto fft_ptr = new analyser_stream(buffer_ptr);
 
-    streams_[0] = pathstream_ptr;
+    // The Controller Stream (Panning, Volume, effects (reverb?)
+    auto controller_ptr = new controller_stream<short>(fft_ptr, 44100, 2, 1024);
+
+    streams_[0] = sourcestream_ptr;
     streams_[1] = buffer_ptr;
     streams_[2] = fft_ptr;
+    streams_[3] = controller_ptr;
 
-    audio_out_.set_stream(fft_ptr);
+    audio_out_.set_stream(controller_ptr);
 
     audio_out_.play();
-    sync_.start(1.f/60*1000);
+    sync_.start(1.f/70*1000);
 }
 
 void zapPlayer::stop() {
@@ -115,4 +130,10 @@ void zapPlayer::sync() {
     visualiser_.set_frequency_bins(buf);
     visualiser_.update(0,0);
     ui->openGLWidget->update();
+}
+
+void zapPlayer::volumeChanged(int volume) {
+    if(auto ptr = dynamic_cast<controller_stream<short>*>(streams_[3])) {
+        ptr->set_volume(volume/100.f);
+    }
 }
