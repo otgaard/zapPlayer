@@ -16,6 +16,9 @@ public:
     bool initialise();
     bool is_initialised() const;
 
+    std::vector<std::string> get_visualisations() const;
+    void set_visualisation(const std::string& name);
+
     void set_frequency_bins(const std::vector<float>& bins);
 
     void resize(int width, int height);

@@ -32,6 +32,9 @@ public slots:
 
     void volumeChanged(int volume);
 
+    void onGLInit();
+    void moduleChanged(const QString&);
+
 private:
     Ui::zapPlayer* ui;
 

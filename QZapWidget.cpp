@@ -1,4 +1,5 @@
 #include <QDebug>
+#include <third_party/include/zap/engine/engine.hpp>
 #include "QZapWidget.h"
 
 QZapWidget::QZapWidget(QWidget* parent) : QOpenGLWidget(parent), context_initialised_(false), vis_ptr_(nullptr) {
@@ -7,12 +8,18 @@ QZapWidget::QZapWidget(QWidget* parent) : QOpenGLWidget(parent), context_initial
 QZapWidget::~QZapWidget() = default;
 
 void QZapWidget::initializeGL() {
+    zap::engine::init();
+
     QOpenGLFunctions::initializeOpenGLFunctions();
+
+    glEnable(GL_DEPTH_TEST);
+
     if(vis_ptr_ && !vis_ptr_->initialise()) {
         qDebug() << "Error initialising visualiser";
         return;
     }
     context_initialised_ = true;
+    emit onInitialized();
 }
 
 visualiser* QZapWidget::get_visualiser() const {

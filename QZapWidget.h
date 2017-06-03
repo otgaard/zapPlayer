@@ -6,9 +6,13 @@
 #include "visualiser.hpp"
 
 class QZapWidget : public QOpenGLWidget, protected QOpenGLFunctions {
+    Q_OBJECT
+
 public:
     QZapWidget(QWidget* parent=nullptr);
     virtual ~QZapWidget();
+
+    bool is_initialised() const { return context_initialised_; }
 
     visualiser* get_visualiser() const;
     void set_visualiser(visualiser* vis_ptr);
@@ -19,6 +23,9 @@ public:
     void mousePressEvent(QMouseEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
     void wheelEvent(QWheelEvent* event) override;
+
+signals:
+    void onInitialized();
 
 protected:
 

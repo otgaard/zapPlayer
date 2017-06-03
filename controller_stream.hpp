@@ -15,7 +15,7 @@ public:
     using buffer_t = typename stream_t::buffer_t;
 
     controller_stream(stream_t* input, size_t sample_rate, size_t channels, size_t frame_size) : stream_t(input),
-        volume_(0.6f), sample_rate_(sample_rate), channels_(channels), frame_size_(frame_size) { }
+        volume_(.75f), sample_rate_(sample_rate), channels_(channels), frame_size_(frame_size) { }
 
     void set_volume(float v) { volume_ = zap::maths::clamp(v, 0.f, 1.f); }
     float get_volume(float v) const { return volume_; }

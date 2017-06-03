@@ -18,6 +18,8 @@ zapPlayer::zapPlayer(QWidget *parent) : QDialog(parent), ui(new Ui::zapPlayer), 
     setWindowFlags(Qt::WindowStaysOnTopHint);
     //setWindowOpacity(0.5f);
 
+    for(auto& s : streams_) s = nullptr;
+
     connect(ui->btnOpenFile, &QPushButton::clicked, this, &zapPlayer::openFile);
     connect(ui->btnOpenFolder, &QPushButton::clicked, this, &zapPlayer::openFolder);
     connect(ui->btnPlay, &QPushButton::clicked, this, &zapPlayer::play);
@@ -28,8 +30,14 @@ zapPlayer::zapPlayer(QWidget *parent) : QDialog(parent), ui(new Ui::zapPlayer), 
     // We want to implement a pulse that feeds the FFT bins to the visualiser
     connect(&sync_, &QTimer::timeout, this, &zapPlayer::sync);
 
-    ui->openGLWidget->set_visualiser(&visualiser_);
+    if(ui->openGLWidget->is_initialised())
+        onGLInit();
+    else
+        connect(ui->openGLWidget, &QZapWidget::onInitialized, this, &zapPlayer::onGLInit);
 
+    connect(ui->cbxVisualisation, SIGNAL(currentIndexChanged(QString)), this, SLOT(moduleChanged(QString)));
+
+    ui->openGLWidget->set_visualiser(&visualiser_);
 }
 
 zapPlayer::~zapPlayer() {
@@ -81,7 +89,7 @@ void zapPlayer::play() {
     }
 
     // This is a buffering stream to prevent I/O blocking interfering with audio output
-    auto buffer_ptr = new buffered_stream<short>(128*1024, 64*1024, 60, sourcestream_ptr);
+    auto buffer_ptr = new buffered_stream<short>(64*1024, 32*1024, 60, sourcestream_ptr);
     if(!buffer_ptr->start()) {
         qDebug() << "Error starting buffering stream";
         return;
@@ -101,7 +109,9 @@ void zapPlayer::play() {
     audio_out_.set_stream(controller_ptr);
 
     audio_out_.play();
-    sync_.start(1.f/70*1000);
+
+    constexpr int msec = int(1.f/60.f * 1000);
+    sync_.start(msec);
 }
 
 void zapPlayer::stop() {
@@ -110,7 +120,6 @@ void zapPlayer::stop() {
 }
 
 void zapPlayer::pause() {
-
 }
 
 void zapPlayer::skip_track() {
@@ -128,7 +137,7 @@ void zapPlayer::sync() {
     }
 
     visualiser_.set_frequency_bins(buf);
-    visualiser_.update(0,0);
+    visualiser_.update(0.f, .01f);
     ui->openGLWidget->update();
 }
 
@@ -136,4 +145,14 @@ void zapPlayer::volumeChanged(int volume) {
     if(auto ptr = dynamic_cast<controller_stream<short>*>(streams_[3])) {
         ptr->set_volume(volume/100.f);
     }
+}
+
+void zapPlayer::onGLInit() {
+    auto modules = visualiser_.get_visualisations();
+    for(const auto& m : modules) ui->cbxVisualisation->addItem(m.c_str());
+}
+
+void zapPlayer::moduleChanged(const QString& module) {
+    qDebug() << module;
+    visualiser_.set_visualisation(module.toStdString());
 }

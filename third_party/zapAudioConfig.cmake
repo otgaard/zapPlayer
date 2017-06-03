@@ -1,5 +1,5 @@
-set(zapAudio_INCLUDE_DIRS ${zapAudio_DIR}/include)
-set(zapAudio_LIBRARY_DIR ${zapAudio_DIR}/lib)
+set(zapAudio_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/third_party/include)
+set(zapAudio_LIBRARY_DIR ${CMAKE_SOURCE_DIR}/third_party/lib)
 set(zapAudio_LIBRARIES ${zapAudio_LIBRARIES} ${zapAudio_LIBRARY_DIR}/libzapAudio.dylib)
 set(zapAudio_LIBRARIES ${zapAudio_LIBRARIES} ${zapAudio_LIBRARY_DIR}/libportaudio.dylib)
 set(zapAudio_LIBRARIES ${zapAudio_LIBRARIES} ${zapAudio_LIBRARY_DIR}/libmp3lame.0.dylib)

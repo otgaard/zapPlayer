@@ -1,7 +1,8 @@
 /* Created by Darren Otgaar on 2016/12/04. http://www.github.com/otgaard/zap */
-#include "histogram.hpp"
 #define LOGGING_ENABLED
 #include <zap/tools/log.hpp>
+
+#include "histogram.hpp"
 #include <zap/engine/program.hpp>
 #include <zap/graphics2/graphics2.hpp>
 #include <zap/renderer/camera.hpp>
