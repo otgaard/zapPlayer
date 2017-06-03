@@ -7,13 +7,13 @@
 
 bool directory_stream::start() {
     static const std::regex mp3_substr(".mp3$|.MP3$");
-    if(zap::is_dir(path_)) {
+    //if(zap::is_dir(path_)) {
         auto files = zap::get_files(path_);
         for(const auto& file : files) {
             LOG(file);
             file_queue_.push(file);
         }
-    }
+    //}
 
     if(file_queue_.size() > 1) {
         file_streams_[0] = std::make_unique<mp3_stream>(file_queue_.front(), frame_size_, nullptr);

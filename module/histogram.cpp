@@ -4,7 +4,7 @@
 
 #include "histogram.hpp"
 #include <zap/engine/program.hpp>
-#include <zap/graphics2/graphics2.hpp>
+#include <zap/graphics2/g2_types.hpp>
 #include <zap/renderer/camera.hpp>
 
 #define GLSL(src) "#version 330 core\n" #src

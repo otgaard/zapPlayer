@@ -6,7 +6,8 @@
 #include <queue>
 #include <string>
 #include <atomic>
-#include "zapAudio/base/mp3_stream.hpp"
+#include <memory>
+#include "zapAudio/streams/mp3_stream.hpp"
 
 class directory_stream : public audio_stream<short> {
 public:

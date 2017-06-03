@@ -4,13 +4,16 @@ project(zapPlayer)
 set(Qt4and5)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-set(CMAKE_CXX_STANDARD 14)
-
 if(APPLE)
+    set(CMAKE_CXX_STANDARD 14)
     add_definitions(-Wall -Werror)
 elseif(UNIX)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} - std=c++1y")
     add_definitions(-Wall -Werror)
 elseif(WIN32)
+    set(CMAKE_CXX_STANDARD 14)
+    add_definitions(-DGLEW_STATIC)
+    include_directories(${CMAKE_SOURCE_DIR}/third_party/include)
 endif(APPLE)
 
 find_package(zap REQUIRED PATHS ${CMAKE_SOURCE_DIR}/third_party NO_DEFAULT_PATH)
@@ -49,11 +52,25 @@ set(ZAP_PLAYER_FILES
         module/texture_mod.cpp
         module/texture_mod.hpp)
 
-add_executable(zapPlayer MACOSX_BUNDLE ${ZAP_PLAYER_FILES} ${ZAP_PLAYER_MOC} ${ZAP_PLAYER_UI})
-target_include_directories(zapPlayer PUBLIC ${zap_INCLUDE_DIRS} ${zapAudio_INCLUDE_DIRS})
+if(WIN32)
+    include_directories(
+            ${CMAKE_SOURCE_DIR}/third_party/include
+            C:/Development/zap/third_party/glew/include
+            C:/Development/zap
+            C:/Development/zap/third_party/include)
 
-if(APPLE)
+    link_directories(
+            ${CMAKE_SOURCE_DIR}/third_party/lib
+            C:/Development/zap/build/Release
+            C:/Development/zap/third_party/lib)
+
+    add_definitions(-DGLEW_STATIC)
+    set(GLEW_LIB C:/Development/zap/third_party/glew/lib/Release/Win32/glew32s.lib)
+    add_executable(zapPlayer WIN32 ${ZAP_PLAYER_FILES} ${ZAP_PLAYER_MOC} ${ZAP_PLAYER_UI})
+    target_include_directories(zapPlayer PUBLIC ${zap_INCLUDE_DIRS} ${zapAudio_INCLUDE_DIRS})
+    target_link_libraries(zapPlayer ${zap_LIBRARIES} ${zapAudio_LIBRARIES} ${GLEW_LIB} opengl32.lib Qt5::Widgets Qt5::Gui Qt5::OpenGL)
+elseif(APPLE)
+    add_executable(zapPlayer MACOSX_BUNDLE ${ZAP_PLAYER_FILES} ${ZAP_PLAYER_MOC} ${ZAP_PLAYER_UI})
+    target_include_directories(zapPlayer PUBLIC ${zap_INCLUDE_DIRS} ${zapAudio_INCLUDE_DIRS})
     target_link_libraries(zapPlayer ${zap_LIBRARIES} ${zapAudio_LIBRARIES} Qt5::Widgets Qt5::Gui Qt5::OpenGL)
-elseif(WIN32)
-    target_link_libraries(zapPlayer ${zap_LIBRARIES} ${zapAudio_LIBRARIES} Qt5::Widgets Qt5::Gui Qt5::OpenGL)
-endif(APPLE)
+endif(WIN32)
