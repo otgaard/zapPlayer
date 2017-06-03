@@ -8,7 +8,7 @@
  * necessary to build a delay line to sync the FFT with the audio output as the output may be a frame or two behind.
  */
 
-#include <zapAudio/base/audio_stream.hpp>
+#include <zapAudio/streams/audio_stream.hpp>
 #include <zap/maths/maths.hpp>
 #include <mutex>
 

@@ -5,7 +5,7 @@
 #ifndef ZAPPLAYER_CONTROLLER_STREAM_HPP
 #define ZAPPLAYER_CONTROLLER_STREAM_HPP
 
-#include <zapAudio/base/audio_stream.hpp>
+#include <zapAudio/streams/audio_stream.hpp>
 #include <zap/maths/maths.hpp>
 
 template <typename SampleT>

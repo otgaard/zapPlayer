@@ -2,7 +2,7 @@
 #define ZAPPLAYER_H
 
 #include <QDialog>
-#include <zapAudio/base/audio_output.hpp>
+#include <zapAudio/audio_output.hpp>
 #include <QTimer>
 #include "visualiser.hpp"
 

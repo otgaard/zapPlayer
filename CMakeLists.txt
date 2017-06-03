@@ -11,7 +11,9 @@ elseif(UNIX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} - std=c++1y")
     add_definitions(-Wall -Werror)
 elseif(WIN32)
-
+    set(CMAKE_CXX_STANDARD 14)
+    add_definitions(-DGLEW_STATIC)
+    include_directories(${CMAKE_SOURCE_DIR}/third_party/include)
 endif(APPLE)
 
 find_package(zap REQUIRED PATHS ${CMAKE_SOURCE_DIR}/third_party NO_DEFAULT_PATH)
@@ -27,13 +29,44 @@ qt5_wrap_cpp(ZAP_PLAYER_MOC
 
 qt5_wrap_ui(ZAP_PLAYER_UI zapPlayer.ui)
 
-set(ZAP_PLAYER_FILES main.cpp zapPlayer.cpp QZapWidget.cpp visualiser.cpp visualiser.hpp analyser_stream.cpp analyser_stream.hpp directory_stream.cpp directory_stream.hpp controller_stream.hpp module/module.hpp analyser.cpp analyser.hpp module/histogram.cpp module/histogram.hpp module/spectrogram.cpp module/spectrogram.hpp)
+set(ZAP_PLAYER_FILES
+        main.cpp
+        zapPlayer.cpp
+        QZapWidget.cpp
+        visualiser.cpp
+        visualiser.hpp
+        analyser_stream.cpp
+        analyser_stream.hpp
+        directory_stream.cpp
+        directory_stream.hpp
+        controller_stream.hpp
+        module/module.hpp analyser.cpp
+        analyser.hpp
+        module/histogram.cpp
+        module/histogram.hpp
+        module/spectrogram.cpp
+        module/spectrogram.hpp)
 
-add_executable(zapPlayer ${ZAP_PLAYER_FILES} ${ZAP_PLAYER_MOC} ${ZAP_PLAYER_UI})
+include_directories(
+        ${CMAKE_SOURCE_DIR}/third_party/include
+        C:/Development/zap/third_party/glew/include
+        C:/Development/zap
+        C:/Development/zap/third_party/include)
+
+link_directories(
+        ${CMAKE_SOURCE_DIR}/third_party/lib
+        C:/Development/zap/build/Release
+        C:/Development/zap/third_party/lib)
+
+add_definitions(-DGLEW_STATIC)
+set(GLEW_LIB C:/Development/zap/third_party/glew/lib/Release/Win32/glew32s.lib)
+
+
+add_executable(zapPlayer WIN32 ${ZAP_PLAYER_FILES} ${ZAP_PLAYER_MOC} ${ZAP_PLAYER_UI})
 target_include_directories(zapPlayer PUBLIC ${zap_INCLUDE_DIRS} ${zapAudio_INCLUDE_DIRS})
 
 if(APPLE)
     target_link_libraries(zapPlayer ${zap_LIBRARIES} ${zapAudio_LIBRARIES} Qt5::Widgets Qt5::Gui Qt5::OpenGL)
 elseif(WIN32)
-    target_link_libraries(zapPlayer ${zap_LIBRARIES} ${zapAudio_LIBRARIES} Qt5::Widgets Qt5::Gui Qt5::OpenGL)
+    target_link_libraries(zapPlayer ${zap_LIBRARIES} ${zapAudio_LIBRARIES} ${GLEW_LIB} opengl32.lib Qt5::Widgets Qt5::Gui Qt5::OpenGL)
 endif(APPLE)

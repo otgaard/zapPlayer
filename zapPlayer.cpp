@@ -7,9 +7,9 @@
 #include "analyser_stream.hpp"
 #include "directory_stream.hpp"
 #include "controller_stream.hpp"
-#include <zapAudio/base/mp3_stream.hpp>
-#include <zapAudio/base/sine_wave.hpp>
-#include <zapAudio/base/buffered_stream.hpp>
+#include <zapAudio/streams/mp3_stream.hpp>
+#include <zapAudio/streams/sine_wave.hpp>
+#include <zapAudio/streams/buffered_stream.hpp>
 
 zapPlayer::zapPlayer(QWidget *parent) : QDialog(parent), ui(new Ui::zapPlayer), audio_out_(nullptr,2,44100,1024),
     visualiser_(128) {
@@ -81,7 +81,7 @@ void zapPlayer::play() {
     }
 
     // This is a buffering stream to prevent I/O blocking interfering with audio output
-    auto buffer_ptr = new buffered_stream<short>(128*1024, 64*1024, 60, sourcestream_ptr);
+    auto buffer_ptr = new buffered_stream<short>(64*1024, 32*1024, 60, sourcestream_ptr);
     if(!buffer_ptr->start()) {
         qDebug() << "Error starting buffering stream";
         return;
