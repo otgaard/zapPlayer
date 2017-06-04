@@ -38,6 +38,10 @@ zapPlayer::zapPlayer(QWidget *parent) : QDialog(parent), ui(new Ui::zapPlayer), 
     connect(ui->cbxVisualisation, SIGNAL(currentIndexChanged(QString)), this, SLOT(moduleChanged(QString)));
 
     ui->openGLWidget->set_visualiser(&visualiser_);
+    qDebug() << "Disable Fixed Path";
+    path_ = "/Users/otgaard/Desktop/Test Music/test.mp3";
+    is_folder_ = false;
+    play();
 }
 
 zapPlayer::~zapPlayer() {

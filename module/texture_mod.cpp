@@ -34,8 +34,8 @@ const char* const texmod_vshdr = GLSL(
     }
 );
 
-#define FAST_PATTERNS
-//#define LINES
+//#define FAST_PATTERNS
+#define HISTOBARS
 
 #if defined(FAST_PATTERNS)
 const char* const texmod_fshdr = GLSL(
@@ -76,10 +76,15 @@ const char* const texmod_fshdr = GLSL(
         frag_colour = vec4((gx+gy-gxy-gyx+bass-bxy), (rx+ry-rxy-ryx-bass+rxy), (bx+by-bxy-byx+bass-gxy), 1.);
     }
 );
-#elif defined(LINES)
+#elif defined(HISTOBARS)
 const char* const texmod_fshdr = GLSL(
+    const float logH = -0.30103;
     float step(float a, float x) { return float(x >= a); }
     float pulse(float a, float b, float x) { return step(a, x) - step(b, x); }
+    float gamma(float g, float x) { return pow(x, 1./g); }
+    vec4 gamma4(float g, vec4 v) { return vec4(gamma(g, v.x), gamma(g, v.y), gamma(g, v.z), v.w); }
+    float bias(float b, float x) { return pow(x, log(b)/logH); }
+    float gain(float g, float x) { return x < .5 ? .5*bias(1. - g, 2.*x) : 1 - .5*bias(1. - g, 2 - 2*x); }
 
     uniform vec2 dims;
     uniform float fft[128];
@@ -90,10 +95,13 @@ const char* const texmod_fshdr = GLSL(
     void main() {
         float e = 0.;
         for(int i = 0; i != 128; ++i) {
-            e += pulse(i/128., (i+1)/128., texcoord.x) * pulse(0., fft[i], texcoord.y);
+            e += fft[i] * pulse(i/128., (i+1)/128., texcoord.x) *
+                    pulse(0., .8, mod(texcoord.x, 1./128.)*128) *
+                    pulse(0., fft[i], texcoord.y) *
+                    pulse(0., .8, mod(texcoord.y, 0.02)/0.02);
         }
 
-        frag_colour = vec4(e, 0, 0, 1.);
+        frag_colour = gamma4(1.8, e * mix(vec4(1,1,0,1), vec4(1,0,0,1), gain(.8, texcoord.y)));
     }
 );
 #else
@@ -170,7 +178,7 @@ void texture_mod::update(float dt, const std::vector<float>& samples) {
     std::vector<float> samps(16);
     for(int i = 0; i != 128; ++i) samps[i/8] += samples[i]/8.f;
     s.prog.bind_uniform("fft", samps);
-#elif defined(LINES)
+#elif defined(HISTOBARS)
     s.prog.bind_uniform("fft", samples);
 #endif
     //s.prog.bind_uniform("time", s.time);
