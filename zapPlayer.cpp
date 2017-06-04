@@ -87,7 +87,6 @@ void zapPlayer::play() {
 
         pathstream_ptr->on_next_track([this](const std::string& filename) {
             QString file = filename.c_str();
-            qDebug() << "HANDLER";
             QMetaObject::invokeMethod(this, "onNextTrack", Qt::QueuedConnection, Q_ARG(QString, file));
         });
 
@@ -96,7 +95,6 @@ void zapPlayer::play() {
             return;
         }
         sourcestream_ptr = pathstream_ptr;
-        // This is dodgy, shouldn't really do this
     } else {
         auto filestream_ptr = new mp3_stream(path_.toStdString(), 1024, nullptr);
         if(!filestream_ptr->start()) {
@@ -178,6 +176,5 @@ void zapPlayer::moduleChanged(const QString& module) {
 }
 
 void zapPlayer::onNextTrack(const QString& filename) {
-    qDebug() << "SETTING";
     ui->txtFilename->setText(filename);
 }

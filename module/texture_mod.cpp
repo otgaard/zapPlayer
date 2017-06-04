@@ -9,6 +9,7 @@
 #include <engine/program.hpp>
 #include <renderer/camera.hpp>
 #include <generators/noise/perlin.hpp>
+#include <generators/textures/planar.hpp>
 #include <engine/framebuffer.hpp>
 #include <engine/sampler.hpp>
 
@@ -35,8 +36,8 @@ const char* const texmod_vshdr = GLSL(
 );
 
 //#define FAST_PATTERNS
-#define HISTOBARS
-//#define MOTIONBLUR
+//#define HISTOBARS
+#define MOTIONBLUR
 
 #if defined(FAST_PATTERNS)
 const char* const texmod_fshdr = GLSL(
@@ -107,16 +108,45 @@ const char* const texmod_fshdr = GLSL(
 );
 #elif defined(MOTIONBLUR)
 const char* const texmod_fshdr = GLSL(
+    const float logH = -0.30103;
+    float step(float a, float x) { return float(x >= a); }
+    float pulse(float a, float b, float x) { return step(a, x) - step(b, x); }
+    float gamma(float g, float x) { return pow(x, 1./g); }
+    vec4 gamma4(float g, vec4 v) { return vec4(gamma(g, v.x), gamma(g, v.y), gamma(g, v.z), v.w); }
+    float bias(float b, float x) { return pow(x, log(b)/logH); }
+    float gain(float g, float x) { return x < .5 ? .5*bias(1. - g, 2.*x) : 1 - .5*bias(1. - g, 2 - 2*x); }
 
+    uniform vec2 dims;
+    uniform float fft[128];
+    uniform vec2 discs[128];
+    uniform sampler2D tex;
+
+    in vec2 pos;
+    in vec2 texcoord;
+
+    out vec4 frag_colour;
+
+    void main() {
+        for(int i = 0; i != 128; ++i) {
+            float d = length(discs[i] - pos);
+            vec4 col = d < (dims.y/12 - i/12) ? mix(vec4(1. - i/128., i/128., 0., 1.), vec4(i/128., 1.-i/128., 0., 1.), bias(.3, d / (dims.y/12 - i/12))) : vec4(0., 0., 0., 1.);
+            frag_colour += .002*texture(tex, texcoord) + .4*col*bias(.7, fft[i]);
+        }
+    }
 );
 #endif
+
 struct texture_mod::state_t {
-    framebuffer fbuf[2];
+    int width, height;
+    framebuffer fbuf[5];
     vbuf_p2_t vbuf;
     mesh_p2_tfan_t mesh;
     camera cam;
     program prog;
     float time;
+    texture temp_tex;
+    int active;
+    std::vector<vec2f> discs;
 };
 
 texture_mod::texture_mod() : state_(new state_t()), s(*state_.get()) {
@@ -147,23 +177,22 @@ bool texture_mod::initialise() {
         return false;
     }
 
-    if(!s.fbuf[0].allocate() || !s.fbuf[1].allocate()) {
-        LOG_ERR("Failed to allocate framebuffers");
-        return false;
-    }
+    s.temp_tex.allocate();
+    auto buf = generators::planar<rgb888_t>::make_checker(16, 16, vec3b(255,0,0), vec3b(0,0,255));
+    s.temp_tex.initialise(16,16,buf,false);
 
-    if(!s.fbuf[0].initialise(1, 256, 256, pixel_format::PF_RGB, pixel_datatype::PD_FLOAT, false, false) ||
-       !s.fbuf[1].initialise(1, 256, 256, pixel_format::PF_RGB, pixel_datatype::PD_FLOAT, false, false)) {
-        LOG_ERR("Failed to initialise framebuffers");
-        return false;
-    }
+    for(int i = 0; i != 5; ++i) s.fbuf[i].allocate();
+
+    s.discs.resize(128);
 
     s.time = 0.f;
+    s.active = 0;
 
     return true;
 }
 
 void texture_mod::resize(int width, int height) {
+    s.width = width; s.height = height;
     s.cam.frustum(0.f, 1.f, 0.f, 1.f, 0.f, 1.f);
     s.cam.viewport(0.f, 0.f, 1.f, 1.f);
     s.cam.orthogonolise(vec3f{0.f, 0.f, -1.f});
@@ -171,7 +200,13 @@ void texture_mod::resize(int width, int height) {
     s.prog.bind();
     s.prog.bind_uniform("pvm", s.cam.proj_view());
     s.prog.bind_uniform("dims", vec2f{float(width), float(height)});
+    LOG("initialising framebuffers");
     s.prog.release();
+    for(int i = 0; i != 5; ++i) {
+        s.fbuf[i].initialise(1, width, height, pixel_format::PF_RGB, pixel_datatype::PD_UNSIGNED_BYTE, false, false);
+    }
+
+    for(int i = 0; i != 128; ++i) s.discs[i].set(i*width/128.f, height/2.f);
 }
 
 void texture_mod::update(float dt, const std::vector<float>& samples) {
@@ -183,15 +218,37 @@ void texture_mod::update(float dt, const std::vector<float>& samples) {
     s.prog.bind_uniform("fft", samps);
 #elif defined(HISTOBARS)
     s.prog.bind_uniform("fft", samples);
+#elif defined(MOTIONBLUR)
+    //auto disc = make_rotation(rot) * vec2f{100.f, 0.f} + vec2f{s.width/2.f, s.height/2.f};
+    //s.prog.bind_uniform("disc", disc);
+    //rot += .05f*(samples[0]+samples[1]+samples[2]+samples[3]);
+    s.prog.bind_texture_unit("tex", 0);
 #endif
-    //s.prog.bind_uniform("time", s.time);
+    for(int i = 0; i != 128; ++i) {
+        s.discs[i].set(s.discs[i].x + s.width/30.f*samples[i], s.height/2 + (i % 2 == 0 ? -1 : 1) * samples[i]*s.height/2);
+        if(s.discs[i].x > s.width) s.discs[i].x = 0.f;
+    }
+
+    s.prog.bind_uniform("discs", s.discs);
+    s.prog.bind_uniform("fft", samples);
+
+    s.fbuf[s.active == 0 ? 4 : s.active-1].get_attachment(0).bind(0);
+    s.fbuf[s.active].bind();
+    s.mesh.bind();
+    s.mesh.draw();
+    s.mesh.release();
+    s.fbuf[s.active].release();
+
     s.prog.release();
 }
 
 void texture_mod::draw(const zap::renderer::camera& cam) {
     s.prog.bind();
+    s.fbuf[s.active].get_attachment(0).bind(0);
     s.mesh.bind();
     s.mesh.draw();
     s.mesh.release();
+    s.fbuf[s.active].get_attachment(0).release();
     s.prog.release();
+    s.active = s.active+1 > 4 ? 0 : s.active+1;
 }
