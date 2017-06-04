@@ -15,7 +15,7 @@ elseif(UNIX)
 elseif(WIN32)
     set(CMAKE_CXX_STANDARD 14)
     add_definitions(-DGLEW_STATIC)
-    include_directories(${CMAKE_SOURCE_DIR}/third_party/include)
+    include_directories(${CMAKE_SOURCE_DIR}/third_party/include ${CMAKE_SOURCE_DIR}/third_party/include/zapAudio)
 endif(APPLE)
 
 find_package(zap REQUIRED PATHS ${CMAKE_SOURCE_DIR}/third_party NO_DEFAULT_PATH)

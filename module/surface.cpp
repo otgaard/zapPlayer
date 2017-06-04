@@ -267,6 +267,7 @@ struct surface::state_t {
     camera cam;
     generators::noise noise;
     float start;
+    state_t() : active(0) { }
 };
 
 surface::surface() : state_(new state_t{}), s(*state_.get()) {
@@ -291,7 +292,7 @@ bool surface::initialise() {
     s.mesh.set_stream(vertex_stream<vbuf_p3_t, vbuf_n3ps1_t>{&s.vbuf, &s.vbuf_ps[0]});
     s.mesh.set_index(&s.ibuf);
 
-    patch_tessellator<unsigned int> tess{cols, rows};
+    patch_tessellator<unsigned int> tess{uint32_t(cols), uint32_t(rows)};
     tess.tessellate(s.ibuf);
 
     s.noise.initialise();
