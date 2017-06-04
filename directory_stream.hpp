@@ -7,7 +7,8 @@
 #include <string>
 #include <atomic>
 #include <memory>
-#include "zapAudio/streams/mp3_stream.hpp"
+#include <functional>
+#include <streams/mp3_stream.hpp>
 
 class directory_stream : public audio_stream<short> {
 public:
