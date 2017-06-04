@@ -19,7 +19,13 @@ public:
     virtual size_t read(buffer_t& buffer, size_t len);
     virtual size_t write(const buffer_t& buffer, size_t len);
 
+    std::string current_path() const;
+    std::string current_track() const;
     void skip_track() { skip_track_ = true; }
+
+    void on_next_track(std::function<void(const std::string&)>&& callback_fnc) {
+        on_next_track_ = std::move(callback_fnc);
+    }
 
 private:
     std::string path_;
@@ -27,6 +33,7 @@ private:
     std::queue<std::string> file_queue_;
     std::array<std::unique_ptr<mp3_stream>, 2> file_streams_;
     std::atomic<bool> skip_track_;
+    std::function<void(const std::string&)> on_next_track_;
 };
 
 #endif //ZAPPLAYER_DIRECTORY_STREAM_HPP

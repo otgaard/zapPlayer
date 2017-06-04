@@ -26,6 +26,7 @@ zapPlayer::zapPlayer(QWidget *parent) : QDialog(parent), ui(new Ui::zapPlayer), 
     connect(ui->btnStop, &QPushButton::clicked, this, &zapPlayer::stop);
     connect(ui->btnSkip, &QPushButton::clicked, this, &zapPlayer::skip_track);
     connect(ui->sldVolume, &QSlider::valueChanged, this, &zapPlayer::volumeChanged);
+    connect(ui->btnPause, &QPushButton::clicked, this, &zapPlayer::pause);
 
     // We want to implement a pulse that feeds the FFT bins to the visualiser
     connect(&sync_, &QTimer::timeout, this, &zapPlayer::sync);
@@ -36,6 +37,9 @@ zapPlayer::zapPlayer(QWidget *parent) : QDialog(parent), ui(new Ui::zapPlayer), 
         connect(ui->openGLWidget, &QZapWidget::onInitialized, this, &zapPlayer::onGLInit);
 
     connect(ui->cbxVisualisation, SIGNAL(currentIndexChanged(QString)), this, SLOT(moduleChanged(QString)));
+
+    ui->txtFolder->setReadOnly(true);
+    ui->txtFilename->setReadOnly(true);
 
     ui->openGLWidget->set_visualiser(&visualiser_);
     qDebug() << "Disable Fixed Path";
@@ -57,11 +61,13 @@ void zapPlayer::openFile() {
     path_ = QFileDialog::getOpenFileName(this, tr("Open MP3 File"), QDir::homePath(),
         tr("MP3 Files (*.mp3)"));
     is_folder_ = false;
+    ui->txtFilename->setText(path_);
 }
 
 void zapPlayer::openFolder() {
     path_ = QFileDialog::getExistingDirectory(nullptr, "Please select a directory to play", QDir::homePath());
     is_folder_ = true;
+    ui->txtFolder->setText(path_);
 }
 
 void zapPlayer::play() {
@@ -78,11 +84,19 @@ void zapPlayer::play() {
 
     if(is_folder_) {
         auto pathstream_ptr = new directory_stream(path_.toStdString(), 1024);
+
+        pathstream_ptr->on_next_track([this](const std::string& filename) {
+            QString file = filename.c_str();
+            qDebug() << "HANDLER";
+            QMetaObject::invokeMethod(this, "onNextTrack", Qt::QueuedConnection, Q_ARG(QString, file));
+        });
+
         if(!pathstream_ptr->start()) {
             qDebug() << "Error starting directory_stream";
             return;
         }
         sourcestream_ptr = pathstream_ptr;
+        // This is dodgy, shouldn't really do this
     } else {
         auto filestream_ptr = new mp3_stream(path_.toStdString(), 1024, nullptr);
         if(!filestream_ptr->start()) {
@@ -90,6 +104,7 @@ void zapPlayer::play() {
             return;
         }
         sourcestream_ptr = filestream_ptr;
+        ui->txtFilename->setText(path_);
     }
 
     // This is a buffering stream to prevent I/O blocking interfering with audio output
@@ -113,9 +128,7 @@ void zapPlayer::play() {
     audio_out_.set_stream(controller_ptr);
 
     audio_out_.play();
-
-    constexpr int msec = int(1.f/60.f * 1000);
-    sync_.start(msec);
+    sync_.start(0);
 }
 
 void zapPlayer::stop() {
@@ -124,6 +137,9 @@ void zapPlayer::stop() {
 }
 
 void zapPlayer::pause() {
+    audio_out_.pause();
+    if(audio_out_.is_paused()) ui->btnPause->setText("Resume");
+    else                       ui->btnPause->setText("Pause");
 }
 
 void zapPlayer::skip_track() {
@@ -159,4 +175,9 @@ void zapPlayer::onGLInit() {
 void zapPlayer::moduleChanged(const QString& module) {
     qDebug() << module;
     visualiser_.set_visualisation(module.toStdString());
+}
+
+void zapPlayer::onNextTrack(const QString& filename) {
+    qDebug() << "SETTING";
+    ui->txtFilename->setText(filename);
 }

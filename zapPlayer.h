@@ -29,6 +29,7 @@ public slots:
     void skip_track();
 
     void sync();
+    void onNextTrack(const QString&);
 
     void volumeChanged(int volume);
 

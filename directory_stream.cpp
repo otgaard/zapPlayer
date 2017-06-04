@@ -7,18 +7,18 @@
 
 bool directory_stream::start() {
     static const std::regex mp3_substr(".mp3$|.MP3$");
-    //if(zap::is_dir(path_)) {
-        auto files = zap::get_files(path_);
-        for(const auto& file : files) {
-            LOG(file);
-            file_queue_.push(file);
-        }
-    //}
+    auto files = zap::get_files(path_);
+    for(const auto& file : files) {
+        LOG(file);
+        file_queue_.push(file);
+    }
 
     if(file_queue_.size() > 1) {
         file_streams_[0] = std::make_unique<mp3_stream>(file_queue_.front(), frame_size_, nullptr);
         file_streams_[0]->start();
         file_queue_.pop();
+
+        if(on_next_track_) on_next_track_(file_streams_[0]->get_filename());
     }
 
     if(file_queue_.size() > 1) {
@@ -45,6 +45,8 @@ size_t directory_stream::read(buffer_t& buffer, size_t len) {
             std::vector<short> remainder(len - ret);
             auto rem = file_streams_[0]->read(remainder, len - ret);
 
+            if(on_next_track_) on_next_track_(file_streams_[0]->get_filename());
+
             if(file_queue_.size() > 1) {
                 file_streams_[1] = std::make_unique<mp3_stream>(file_queue_.front(), frame_size_, nullptr);
                 file_streams_[1]->start();
@@ -63,3 +65,13 @@ size_t directory_stream::read(buffer_t& buffer, size_t len) {
 size_t directory_stream::write(const buffer_t& buffer, size_t len) {
     return 0;
 }
+
+std::string directory_stream::current_path() const {
+    return path_;
+}
+
+std::string directory_stream::current_track() const {
+    if(file_streams_[0]) return file_streams_[0]->get_filename();
+    else return std::string();
+}
+

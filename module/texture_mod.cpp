@@ -36,6 +36,7 @@ const char* const texmod_vshdr = GLSL(
 
 //#define FAST_PATTERNS
 #define HISTOBARS
+//#define MOTIONBLUR
 
 #if defined(FAST_PATTERNS)
 const char* const texmod_fshdr = GLSL(
@@ -101,11 +102,13 @@ const char* const texmod_fshdr = GLSL(
                     pulse(0., .8, mod(texcoord.y, 0.02)/0.02);
         }
 
-        frag_colour = gamma4(1.8, e * mix(vec4(1,1,0,1), vec4(1,0,0,1), gain(.8, texcoord.y)));
+        frag_colour = gamma4(1.8, e * mix(vec4(1,1,0,1), vec4(1,0,0,1), bias(.9, texcoord.y)));
     }
 );
-#else
+#elif defined(MOTIONBLUR)
+const char* const texmod_fshdr = GLSL(
 
+);
 #endif
 struct texture_mod::state_t {
     framebuffer fbuf[2];
